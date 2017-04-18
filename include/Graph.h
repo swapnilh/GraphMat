@@ -78,7 +78,7 @@ class Graph {
     void ReadEdgelist(GraphMat::edgelist_t<E> A_edges);
     void getVertexEdgelist(GraphMat::edgelist_t<V> & myedges);
     void getEdgelist(GraphMat::edgelist_t<E> & myedges);
-    void ReadMTX(const char* filename); 
+    void ReadMTX(const char* filename, bool binary, bool header, bool weights); 
     void ReadGraphMatBin(const char* filename);
     void WriteGraphMatBin(const char* filename);
 
@@ -244,9 +244,9 @@ void Graph<V,E>::ReadEdgelist(GraphMat::edgelist_t<E> A_edges) {
 }
 
 template<class V, class E>
-void Graph<V,E>::ReadMTX(const char* filename) {
+void Graph<V,E>::ReadMTX(const char* filename, bool binary, bool header, bool weights) {
   GraphMat::edgelist_t<E> A_edges;
-  GraphMat::load_edgelist(filename, &A_edges, true, true, true);// binary format with header and edge weights
+  GraphMat::load_edgelist(filename, &A_edges, binary, header, weights);// binary format, header and edge weights
 
   if (A_edges.m != A_edges.n) {
     auto maxn = std::max(A_edges.m, A_edges.n);

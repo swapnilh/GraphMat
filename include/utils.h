@@ -45,5 +45,12 @@
 #define _MM_CMP_EQ(A,B)     _mm_cmpeq_epi32(A,B)
 #define _MM_SET1(val)           _mm_set1_epi32(val)
 
-
+void start_pin_tracing()
+{
+    asm volatile(".byte 0xbb,0x11,0x22,0x33,0x44,0x64,0x67,0x90" : : : "ebx");
+}
+void stop_pin_tracing()
+{
+    asm volatile(".byte 0xbb,0x11,0x22,0x33,0x55,0x64,0x67,0x90" : : : "ebx");
+}
 #endif

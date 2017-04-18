@@ -99,10 +99,11 @@ void reachable_or_not(SSSP_vertex_type* v, int *result, void* params=nullptr) {
 
 
 template<class edge_type>
-void run_sssp(const char* filename, int v) {
+void run_sssp(const char* filename, int v, 
+        bool binary, bool header, bool weights) {
 
   GraphMat::Graph<SSSP_vertex_type, edge_type> G;
-  G.ReadMTX(filename); 
+  G.ReadMTX(filename, binary, header, weights); 
 
   SSSP<edge_type> b;
   auto tmp_ds = GraphMat::graph_program_init(b, G);
@@ -118,6 +119,9 @@ void run_sssp(const char* filename, int v) {
   G.setActive(v);
 
   struct timeval start, end;
+  char wait_char;
+  printf("Waiting for input:");
+  scanf("%c", &wait_char);
   gettimeofday(&start, 0);
 
   GraphMat::run_graph_program(&b, G, GraphMat::UNTIL_CONVERGENCE, &tmp_ds);
@@ -125,7 +129,7 @@ void run_sssp(const char* filename, int v) {
   gettimeofday(&end, 0);
   printf("Time = %.3f ms \n", (end.tv_sec-start.tv_sec)*1e3+(end.tv_usec-start.tv_usec)*1e-3);
   
- 
+ /*
   int reachable_vertices = 0;
   G.applyReduceAllVertices(&reachable_vertices, reachable_or_not); //default reduction = sum
 
@@ -138,7 +142,7 @@ void run_sssp(const char* filename, int v) {
     }
   }
   
-  GraphMat::graph_program_clear(tmp_ds);
+  GraphMat::graph_program_clear(tmp_ds);*/
 }
 
 int main (int argc, char* argv[]) {
@@ -146,13 +150,20 @@ int main (int argc, char* argv[]) {
 
   const char* input_filename = argv[1];
 
-  if (argc < 3) {
-    printf("Correct format: %s A.mtx source_vertex (1-based index)\n", argv[0]);
+  bool binary = false, header = true, weights = false;
+  
+  if ((argc != 3) && (argc != 6)) {
+    printf("Correct format: %s A.mtx source_vertex (1-based index) [binary header weights]\n", argv[0]);
     return 0;
+  }
+  else if(argc == 6) {
+    binary = (atoi(argv[3])) ? true : false;
+    header = (atoi(argv[4])) ? true : false;
+    weights = (atoi(argv[5])) ? true : false;
   }
 
   int source_vertex = atoi(argv[2]);
-  run_sssp<int>(input_filename, source_vertex);
+  run_sssp<int>(input_filename, source_vertex, binary, header, weights);
   MPI_Finalize();
 }
 

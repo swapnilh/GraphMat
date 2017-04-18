@@ -160,10 +160,10 @@ void return_sqerr(V* vertexprop, double* out, void* params) {
   *out = vertexprop->sqerr;
 }
 
-void run_sgd(char* filename) {
+void run_sgd(char* filename, bool binary, bool header, bool weights) {
   const int k = 20;
   GraphMat::Graph< LatentVector<k> > G;
-  G.ReadMTX(filename); 
+  G.ReadMTX(filename, binary, header, weights); 
 
   double err = 0.0;
 
@@ -224,13 +224,20 @@ void run_sgd(char* filename) {
 }
 
 int main(int argc, char* argv[]) {
-  if (argc < 2) {
+  
+  bool binary = false, header = true, weights = false;
+  if ((argc != 2) && (argc != 5)) {
     printf("Correct format: %s A.mtx \n", argv[0]);
     return 0;
   }
+  else if(argc == 6) {
+    binary = (atoi(argv[3])) ? true : false;
+    header = (atoi(argv[4])) ? true : false;
+    weights = (atoi(argv[5])) ? true : false;
+  }
   MPI_Init(&argc, &argv);
 
-  run_sgd(argv[1]); 
+  run_sgd(argv[1], binary, header, weights); 
   MPI_Finalize(); 
 }
 

@@ -164,14 +164,14 @@ int main(int argc, char* argv[]) {
   
   bool binary = false, header = true, weights = false;
 
-  if ((argc != 3) && (argc != 6)) {
+  if (argc < 3) {
     printf("Correct format: %s A.mtx source_vertex (1-based index) [binary header weights]\n", argv[0]);
     return 0;
   }
   else if(argc == 6) {
-    binary = (atoi(argv[3])) ? true : false;
-    header = (atoi(argv[4])) ? true : false;
-    weights = (atoi(argv[5])) ? true : false;
+    binary = argv[3];
+    header = argv[4];
+    weights = argv[5];
   }
 
   int source_vertex = atoi(argv[2]);

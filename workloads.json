@@ -1,0 +1,53 @@
+{
+    "BFSNoStop": [
+    {   
+        "database" : "flickr.mtx",
+        "args"     : "699669",  
+        "time"     : ""
+    },
+    {   
+        "database" : "wikipedia-20070206.mtx",
+        "args"     : "21033",  
+        "time"     : ""
+    },
+    {   
+        "database" : "ljournal-2008.mtx",
+        "args"     : "4878880",  
+        "time"     : ""
+    }
+    ],
+    "SSSPNoStop": [
+    {   
+        "database" : "flickr.mtx",
+        "args"     : "699669",  
+        "time"     : ""
+    },
+    {   
+        "database" : "wikipedia-20070206.mtx",
+        "args"     : "21033",  
+        "time"     : ""
+    },
+    {   
+        "database" : "ljournal-2008.mtx",
+        "args"     : "4878880",  
+        "time"     : ""
+    }
+    ],
+    "PageRankNoStop": [
+    {   
+        "database" : "flickr.mtx",
+        "args"     : "", 
+        "time"     : ""
+    },
+    {   
+        "database" : "wikipedia-20070206.mtx",
+        "args"     : "", 
+        "time"     : ""
+    },
+    {   
+        "database" : "ljournal-2008.mtx",
+        "args"     : "",  
+        "time"     : ""
+    }
+    ]
+}

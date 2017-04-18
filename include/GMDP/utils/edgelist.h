@@ -101,7 +101,9 @@ bool readLine (FILE * ifile, int * src, int * dst, T * val, bool binaryformat=tr
       if (feof(ifile)) return false;
       assert(fread_bytes == 1);
     } else {
-      *val = (T)(1);
+      /* Randomizing edge-weights between 1 and 256 */
+//      *val = (T)(1);
+      *val = (T)(rand()%256);
     }
   } else {
     if (edgeweights) {
@@ -123,8 +125,15 @@ bool readLine (FILE * ifile, int * src, int * dst, T * val, bool binaryformat=tr
       }
     } else {
       int ret = fscanf(ifile, "%d %d", src, dst);
+/*      printf("src:%d, dst:%d\n", src, dst);
+      if(src<0 || dst<0) {
+          printf("LESS THAN ZERO: ERROR\n"); 
+          exit(1);
+      }*/
       if (ret == 2) {
-        *val = (T)(1);
+        /* Randomizing edge-weights between 1 and 256 */
+//        *val = (T)(1);
+        *val = (T)(rand()%256);
       } else return false;
     }
     if (feof(ifile)) return false;

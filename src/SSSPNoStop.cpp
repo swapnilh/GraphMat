@@ -29,138 +29,126 @@
 /* Narayanan Sundaram (Intel Corp.)
  * ******************************************************************************/
 
-#include "GraphMatRuntime.h"
 #include <climits>
-#include <ostream>
+#include <cfloat>
 
-typedef unsigned int depth_type;
+#include "GraphMatRuntime.h"
+#include "utils.h"
 
-depth_type MAX_DIST = std::numeric_limits<depth_type>::max();
+//typedef unsigned char distance_type;
+typedef unsigned int distance_type;
+//typedef double distance_type;
+//typedef float distance_type;
 
-class BFSD2 {
+distance_type MAX_DIST = std::numeric_limits<distance_type>::max();
+
+class SSSP_vertex_type {
   public: 
-    depth_type depth;
-    unsigned long long int parent;
-    unsigned long long int id;
+    distance_type distance;
   public:
-    BFSD2() {
-      depth = MAX_DIST;
-      parent = -1;
-      id = -1;
+    SSSP_vertex_type() {
+      distance = MAX_DIST;
     }
-    bool operator != (const BFSD2& p) {
-      return (this->depth != p.depth);
+    bool operator != (const SSSP_vertex_type& p) {
+      return (this->distance != p.distance);
     }
-
-  friend std::ostream &operator<<(std::ostream &outstream, const BFSD2 & val)
-    {
-      outstream << val.depth; 
-      return outstream;
+    void print() const {
+      if (distance < MAX_DIST) {
+        std::cout << "distance = " << distance << std::endl;
+      } else {
+        std::cout << "distance = INF" << std::endl;
+      }
     }
 };
 
-class BFS2 : public GraphMat::GraphProgram<unsigned long long int, unsigned long long int, BFSD2> {
+template <class edge_type>
+class SSSP : public GraphMat::GraphProgram<distance_type, distance_type, SSSP_vertex_type, edge_type> {
 
   public:
-    depth_type current_depth;
-    
-  public:
 
-  BFS2() {
-    current_depth = 1;
+  SSSP() {
     this->order = GraphMat::OUT_EDGES;
     this->process_message_requires_vertexprop = false;
   }
 
-  void reduce_function(unsigned long long int& a, const unsigned long long int& b) const {
-    a=b;
+  void reduce_function(distance_type& a, const distance_type& b) const {
+    a = (a<=b)?(a):(b);
   }
 
-  void process_message(const unsigned long long int& message, const int edge_val, const BFSD2& vertexprop, unsigned long long int &res) const {
-    res = message;
+  void process_message(const distance_type& message, const edge_type edge_val, const SSSP_vertex_type& vertexprop, distance_type &res) const {
+    res = message + edge_val;
   }
 
-  bool send_message(const BFSD2& vertexprop, unsigned long long int& message) const {
-    message = vertexprop.id;
-    return (vertexprop.depth == current_depth-1);
+  bool send_message(const SSSP_vertex_type& vertexprop, distance_type& message) const {
+    message = vertexprop.distance;
+    return true;
   }
 
-  void apply(const unsigned long long int& message_out, BFSD2& vertexprop)  {
-    if (vertexprop.depth == MAX_DIST) {
-      vertexprop.depth = current_depth;
-      vertexprop.parent = message_out;
-    }
-  }
-
-  void do_every_iteration(int iteration_number) {
-    current_depth++;
+  void apply(const distance_type& message_out, SSSP_vertex_type& vertexprop)  {
+    vertexprop.distance = std::min(vertexprop.distance, message_out);
   }
 
 };
 
-void reachable_or_not(BFSD2* v, int *result, void* params=nullptr) {
+void reachable_or_not(SSSP_vertex_type* v, int *result, void* params=nullptr) {
   int reachable = 0;
-  if (v->depth < MAX_DIST) {
+  if (v->distance < MAX_DIST) {
     reachable = 1;
   } 
   *result = reachable;
 }
 
 
-void run_bfs(char* filename, int v, bool binary, bool header, bool weights) {
-  GraphMat::Graph<BFSD2> G;
+template<class edge_type>
+void run_sssp(const char* filename, int v, 
+        bool binary, bool header, bool weights) {
+
+  GraphMat::Graph<SSSP_vertex_type, edge_type> G;
   G.ReadMTX(filename, binary, header, weights); 
 
-  for(int i = 0 ; i < G.getNumberOfVertices() ; i++)
-  {
-    BFSD2 vp = G.getVertexproperty(i+1);
-    vp.id = i+1;
-    G.setVertexproperty(i+1, vp);
-  }
-  BFS2 b;
-  
-  auto b_tmp = GraphMat::graph_program_init(b, G);
+  SSSP<edge_type> b;
+  auto tmp_ds = GraphMat::graph_program_init(b, G);
 
+  SSSP_vertex_type init; 
+  init.distance = 0; 
+
+  SSSP_vertex_type inf; 
+  G.setAllVertexproperty(inf);
   G.setAllInactive();
 
-  //G.vertexproperty[v].depth = 0;
-  auto source = G.getVertexproperty(v);
-  source.depth = 0;
-  G.setVertexproperty(v, source);
+  G.setVertexproperty(v, init);
   G.setActive(v);
 
-  
   struct timeval start, end;
-  char wait_char;
-  printf("Waiting for input:");
-  scanf("%c", &wait_char);
   gettimeofday(&start, 0);
 
-  GraphMat::run_graph_program(&b, G, GraphMat::UNTIL_CONVERGENCE, &b_tmp);
-  
+  start_pin_tracing();  
+  GraphMat::run_graph_program(&b, G, GraphMat::UNTIL_CONVERGENCE, &tmp_ds);
+  stop_pin_tracing();  
+
   gettimeofday(&end, 0);
   printf("Time = %.3f ms \n", (end.tv_sec-start.tv_sec)*1e3+(end.tv_usec-start.tv_usec)*1e-3);
-/*
-  GraphMat::graph_program_clear(b_tmp);
-
+  
+ 
   int reachable_vertices = 0;
   G.applyReduceAllVertices(&reachable_vertices, reachable_or_not); //default reduction = sum
+
   if (GraphMat::get_global_myrank() == 0) printf("Reachable vertices = %d \n", reachable_vertices);
 
-  for (int i = 1; i <= std::min(10, G.getNumberOfVertices()); i++) {
-    if (G.vertexNodeOwner(i))
-    if (G.getVertexproperty(i).depth < MAX_DIST) {
-      printf("Depth %d : %d parent: %lld\n", i, G.getVertexproperty(i).depth, G.getVertexproperty(i).parent);
-    }
-    else {
-      printf("Depth %d : INF \n", i);
+  for (int i = 1; i <= std::min((unsigned long long int)25, (unsigned long long int)G.nvertices); i++) {
+    if (G.vertexNodeOwner(i)) {
+      printf("%d : ", i);
+      G.getVertexproperty(i).print();
     }
   }
-*/
+  
+  GraphMat::graph_program_clear(tmp_ds);
 }
 
-int main(int argc, char* argv[]) {
+int main (int argc, char* argv[]) {
   MPI_Init(&argc, &argv);
+
+  const char* input_filename = argv[1];
   
   bool binary = false, header = true, weights = false;
 
@@ -175,9 +163,7 @@ int main(int argc, char* argv[]) {
   }
 
   int source_vertex = atoi(argv[2]);
-  run_bfs(argv[1], source_vertex, binary, header, weights);
-
+  run_sssp<int>(input_filename, source_vertex, binary, header, weights);
   MPI_Finalize();
-  
 }
 

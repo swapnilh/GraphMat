@@ -113,13 +113,13 @@ class PageRank : public GraphMat::GraphProgram<float, float, PR, E> {
 
 
 template <class edge>
-void run_pagerank(const char* filename, bool binary, bool header, bool weights) {
+void run_pagerank(const char* filename, const int iterations) {
 
   GraphMat::Graph<PR, edge> G;
   Degree<PR, edge> dg;
-  PageRank<edge> pr;
+  int i=0;
   printf("Opening file:%s\n", filename); 
-  G.ReadMTX(filename, binary, header, weights); 
+  G.ReadMTX(filename); 
 
   auto dg_tmp = GraphMat::graph_program_init(dg, G);
 
@@ -135,22 +135,25 @@ void run_pagerank(const char* filename, bool binary, bool header, bool weights) 
 
   GraphMat::graph_program_clear(dg_tmp);
   
-  auto pr_tmp = GraphMat::graph_program_init(pr, G);
-  
+
   char wait_char;
   printf("Waiting for input:");
   scanf("%c", &wait_char);
   gettimeofday(&start, 0);
 	
   G.setAllActive();
-  GraphMat::run_graph_program(&pr, G, GraphMat::UNTIL_CONVERGENCE, &pr_tmp);
+  while(i++ < iterations) {
+	  PageRank<edge> pr;
+	  auto pr_tmp = GraphMat::graph_program_init(pr, G);
+	  GraphMat::run_graph_program(&pr, G, GraphMat::UNTIL_CONVERGENCE, &pr_tmp);
+  }
   gettimeofday(&end, 0);
   time = (end.tv_sec-start.tv_sec)*1e3+(end.tv_usec-start.tv_usec)*1e-3;
   printf("PR Time = %.3f ms \n", time);
   /*
 
-  GraphMat::graph_program_clear(pr_tmp);
   MPI_Barrier(MPI_COMM_WORLD);
+  GraphMat::graph_program_clear(pr_tmp);
   for (int i = 1; i <= std::min((unsigned long long int)25, (unsigned long long int)G.getNumberOfVertices()); i++) { 
     if (G.vertexNodeOwner(i)) {
       printf("%d : %d %f\n", i, G.getVertexproperty(i).degree, G.getVertexproperty(i).pagerank);
@@ -164,21 +167,15 @@ void run_pagerank(const char* filename, bool binary, bool header, bool weights) 
 int main(int argc, char* argv[]) {
   MPI_Init(&argc, &argv);
 
-  bool binary = false, header = true, weights = false;
-  
-  if ((argc != 2) && (argc != 5)) {
-    printf("Correct format: %s A.mtx\n", argv[0]);
+  if (argc < 3) {
+    printf("Correct format: %s A.mtx <iters>\n", argv[0]);
     return 0;
-  }
-  else if(argc == 6) {
-    binary = (atoi(argv[3])) ? true : false;
-    header = (atoi(argv[4])) ? true : false;
-    weights = (atoi(argv[5])) ? true : false;
   }
 
   const char* input_filename = argv[1];
+  const int iterations = atoi(argv[2]);
 
-  run_pagerank<int>(input_filename, binary, header, weights);
+  run_pagerank<int>(input_filename, iterations );
 
   MPI_Finalize();
 }

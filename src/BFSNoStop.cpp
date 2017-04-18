@@ -30,6 +30,7 @@
  * ******************************************************************************/
 
 #include "GraphMatRuntime.h"
+#include "utils.h"
 #include <climits>
 #include <ostream>
 
@@ -131,16 +132,14 @@ void run_bfs(char* filename, int v, bool binary, bool header, bool weights) {
 
   
   struct timeval start, end;
-  char wait_char;
-  printf("Waiting for input:");
-  scanf("%c", &wait_char);
   gettimeofday(&start, 0);
-
+  start_pin_tracing();  
   GraphMat::run_graph_program(&b, G, GraphMat::UNTIL_CONVERGENCE, &b_tmp);
+  stop_pin_tracing();  
   
   gettimeofday(&end, 0);
   printf("Time = %.3f ms \n", (end.tv_sec-start.tv_sec)*1e3+(end.tv_usec-start.tv_usec)*1e-3);
-/*
+
   GraphMat::graph_program_clear(b_tmp);
 
   int reachable_vertices = 0;
@@ -156,14 +155,14 @@ void run_bfs(char* filename, int v, bool binary, bool header, bool weights) {
       printf("Depth %d : INF \n", i);
     }
   }
-*/
+
 }
 
 int main(int argc, char* argv[]) {
   MPI_Init(&argc, &argv);
-  
-  bool binary = false, header = true, weights = false;
 
+  bool binary = false, header = true, weights = false;
+  
   if ((argc != 3) && (argc != 6)) {
     printf("Correct format: %s A.mtx source_vertex (1-based index) [binary header weights]\n", argv[0]);
     return 0;

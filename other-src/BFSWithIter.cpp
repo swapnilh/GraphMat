@@ -107,9 +107,10 @@ void reachable_or_not(BFSD2* v, int *result, void* params=nullptr) {
 }
 
 
-void run_bfs(char* filename, int v, bool binary, bool header, bool weights) {
+void run_bfs(char* filename, int v) {
   GraphMat::Graph<BFSD2> G;
-  G.ReadMTX(filename, binary, header, weights); 
+  G.ReadMTX(filename); 
+  int iter = 0;
 
   for(int i = 0 ; i < G.getNumberOfVertices() ; i++)
   {
@@ -117,9 +118,6 @@ void run_bfs(char* filename, int v, bool binary, bool header, bool weights) {
     vp.id = i+1;
     G.setVertexproperty(i+1, vp);
   }
-  BFS2 b;
-  
-  auto b_tmp = GraphMat::graph_program_init(b, G);
 
   G.setAllInactive();
 
@@ -129,19 +127,21 @@ void run_bfs(char* filename, int v, bool binary, bool header, bool weights) {
   G.setVertexproperty(v, source);
   G.setActive(v);
 
-  
   struct timeval start, end;
   char wait_char;
   printf("Waiting for input:");
   scanf("%c", &wait_char);
   gettimeofday(&start, 0);
 
-  GraphMat::run_graph_program(&b, G, GraphMat::UNTIL_CONVERGENCE, &b_tmp);
-  
+  while(iter++ < 10) {
+	  BFS2 b;
+	  auto b_tmp = GraphMat::graph_program_init(b, G);
+	  GraphMat::run_graph_program(&b, G, GraphMat::UNTIL_CONVERGENCE, &b_tmp);
+	  GraphMat::graph_program_clear(b_tmp);
+  }
   gettimeofday(&end, 0);
   printf("Time = %.3f ms \n", (end.tv_sec-start.tv_sec)*1e3+(end.tv_usec-start.tv_usec)*1e-3);
 /*
-  GraphMat::graph_program_clear(b_tmp);
 
   int reachable_vertices = 0;
   G.applyReduceAllVertices(&reachable_vertices, reachable_or_not); //default reduction = sum
@@ -161,21 +161,14 @@ void run_bfs(char* filename, int v, bool binary, bool header, bool weights) {
 
 int main(int argc, char* argv[]) {
   MPI_Init(&argc, &argv);
-  
-  bool binary = false, header = true, weights = false;
 
-  if ((argc != 3) && (argc != 6)) {
-    printf("Correct format: %s A.mtx source_vertex (1-based index) [binary header weights]\n", argv[0]);
+  if (argc < 3) {
+    printf("Correct format: %s A.mtx source_vertex (1-based index)\n", argv[0]);
     return 0;
-  }
-  else if(argc == 6) {
-    binary = (atoi(argv[3])) ? true : false;
-    header = (atoi(argv[4])) ? true : false;
-    weights = (atoi(argv[5])) ? true : false;
   }
 
   int source_vertex = atoi(argv[2]);
-  run_bfs(argv[1], source_vertex, binary, header, weights);
+  run_bfs(argv[1], source_vertex);
 
   MPI_Finalize();
   

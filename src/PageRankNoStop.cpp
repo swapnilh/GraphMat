@@ -29,6 +29,7 @@
 /* Narayanan Sundaram (Intel Corp.)
  * ******************************************************************************/
 #include "GraphMatRuntime.h"
+#include "utils.h"
 
 
 class PR {
@@ -137,17 +138,16 @@ void run_pagerank(const char* filename, bool binary, bool header, bool weights) 
   
   auto pr_tmp = GraphMat::graph_program_init(pr, G);
   
-  char wait_char;
-  printf("Waiting for input:");
-  scanf("%c", &wait_char);
   gettimeofday(&start, 0);
 	
   G.setAllActive();
+  start_pin_tracing();  
   GraphMat::run_graph_program(&pr, G, GraphMat::UNTIL_CONVERGENCE, &pr_tmp);
+  stop_pin_tracing();  
   gettimeofday(&end, 0);
   time = (end.tv_sec-start.tv_sec)*1e3+(end.tv_usec-start.tv_usec)*1e-3;
   printf("PR Time = %.3f ms \n", time);
-  /*
+  
 
   GraphMat::graph_program_clear(pr_tmp);
   MPI_Barrier(MPI_COMM_WORLD);
@@ -158,7 +158,7 @@ void run_pagerank(const char* filename, bool binary, bool header, bool weights) 
     fflush(stdout);
     MPI_Barrier(MPI_COMM_WORLD);
   }
- */
+ 
 }
 
 int main(int argc, char* argv[]) {

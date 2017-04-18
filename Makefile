@@ -1,5 +1,5 @@
-MPICXX=mpiicpc
-CXX=icpc
+MPICXX=mpic++
+CXX=g++
 
 SRCDIR=./src
 INCLUDEDIR=./include
@@ -10,7 +10,7 @@ CATCHDIR=./test/Catch
 TESTDIR=./test
 TESTBINDIR=./testbin
 
-ifeq (${CXX}, icpc)
+ifeq (${CXX}, icc)
   CXX_OPTIONS=-qopenmp -std=c++11
 else
   CXX_OPTIONS=-fopenmp --std=c++11 -I/usr/include/mpi/
@@ -21,15 +21,15 @@ CXX_OPTIONS+=-I$(INCLUDEDIR) -I$(DIST_PRIMITIVES_PATH)
 ifeq (${debug}, 1)
   CXX_OPTIONS += -O0 -g -D__DEBUG 
 else
-  ifeq (${CXX}, icpc)
+  ifeq (${CXX}, icc)
     CXX_OPTIONS += -O3 -ipo 
   else
     CXX_OPTIONS += -O3 -flto -fwhole-program
   endif
 endif
 
-ifeq (${CXX}, icpc)
-  CXX_OPTIONS += -xHost
+ifeq (${CXX}, icc)
+  CXX_OPTIONS += -march=core-avx2 -shared-intel -mcmodel=medium
 else
   CXX_OPTIONS += -march=native
 endif

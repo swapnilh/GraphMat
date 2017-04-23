@@ -34,7 +34,7 @@
 #include <algorithm>
 #include <assert.h>
 #include <boost/serialization/vector.hpp>
-
+#include "utils.h"
 
 class TC : public GraphMat::Serializable {
   public:
@@ -159,7 +159,7 @@ void return_triangles(TC* v, unsigned long int* out, void* params) {
   *out = v->triangles;
 }
 
-void run_triangle_counting(char* filename, bool binary, bool header, bool weights) {
+void run_triangle_counting(char* filename, bool binary, bool header, bool weights, bool pin, bool perf) {
   GraphMat::Graph<TC> G;
   G.ReadMTX(filename, binary, header, weights); 
   
@@ -180,10 +180,14 @@ void run_triangle_counting(char* filename, bool binary, bool header, bool weight
     }
   }
   gettimeofday(&start, 0);
+  if(pin) start_pin_tracing();  
+  else if (perf) start_perf_tracing();
 
   GraphMat::run_graph_program(&gn, G, 1, &gn_tmp);
 
   GraphMat::run_graph_program(&ct, G, 1, &ct_tmp);
+  if(pin) stop_pin_tracing();  
+  else if (perf) stop_perf_tracing();
   
   gettimeofday(&end, 0);
   printf("Time = %.3f ms \n", (end.tv_sec-start.tv_sec)*1e3+(end.tv_usec-start.tv_usec)*1e-3);
@@ -206,19 +210,24 @@ void run_triangle_counting(char* filename, bool binary, bool header, bool weight
 int main(int argc, char* argv[]) {
   
   bool binary = false, header = true, weights = false;
+  bool pin = false, perf = false;
 
-  if ((argc != 2) && (argc != 5)) {
+  if ((argc != 2) && (argc != 6)) {
     printf("Correct format: %s A.mtx\n", argv[0]);
     return 0;
   }
   else if(argc == 6) {
-    binary = (atoi(argv[3])) ? true : false;
-    header = (atoi(argv[4])) ? true : false;
-    weights = (atoi(argv[5])) ? true : false;
+    binary = (atoi(argv[2])) ? true : false;
+    header = (atoi(argv[3])) ? true : false;
+    weights = (atoi(argv[4])) ? true : false;
+    if (!strcmp(argv[5], "perf"))
+        perf = true;
+    else if (!strcmp(argv[5], "pin"))
+        pin = true;
   }
   MPI_Init(&argc, &argv);
  
-  run_triangle_counting(argv[1], binary, header, weights); 
+  run_triangle_counting(argv[1], binary, header, weights, pin, perf); 
   MPI_Finalize();
 }
 

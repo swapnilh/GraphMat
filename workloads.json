@@ -2,51 +2,68 @@
     "BFSNoStop": [
     {   
         "database" : "flickr.mtx",
-        "args"     : "699669",  
+        "args"     : "699669 0 1 0 ",  
         "time"     : ""
     },
     {   
         "database" : "wikipedia-20070206.mtx",
-        "args"     : "21033",  
+        "args"     : "21033 0 1 0 ",  
         "time"     : ""
     },
     {   
         "database" : "ljournal-2008.mtx",
-        "args"     : "4878880",  
+        "args"     : "4878880 0 1 0 ",  
         "time"     : ""
     }
     ],
     "SSSPNoStop": [
     {   
         "database" : "flickr.mtx",
-        "args"     : "699669",  
+        "args"     : "699669 0 1 0 ",  
         "time"     : ""
     },
     {   
         "database" : "wikipedia-20070206.mtx",
-        "args"     : "21033",  
+        "args"     : "21033 0 1 0 ",  
         "time"     : ""
     },
     {   
         "database" : "ljournal-2008.mtx",
-        "args"     : "4878880",  
+        "args"     : "4878880 0 1 0 ",  
         "time"     : ""
     }
     ],
     "PageRankNoStop": [
     {   
         "database" : "flickr.mtx",
-        "args"     : "", 
+        "args"     : "0 1 0 ", 
         "time"     : ""
     },
     {   
         "database" : "wikipedia-20070206.mtx",
-        "args"     : "", 
+        "args"     : "0 1 0 ", 
         "time"     : ""
     },
     {   
         "database" : "ljournal-2008.mtx",
-        "args"     : "",  
+        "args"     : "0 1 0 ",  
+        "time"     : ""
+    }
+    ],
+    "TriangleCounting": [
+    {   
+        "database" : "flickr.mtx",
+        "args"     : "0 1 0 ", 
+        "time"     : ""
+    },
+    {   
+        "database" : "wikipedia-20070206.mtx",
+        "args"     : "0 1 0 ", 
+        "time"     : ""
+    },
+    {   
+        "database" : "ljournal-2008.mtx",
+        "args"     : "0 1 0 ",  
         "time"     : ""
     }
     ]

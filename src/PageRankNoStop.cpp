@@ -114,7 +114,7 @@ class PageRank : public GraphMat::GraphProgram<float, float, PR, E> {
 
 
 template <class edge>
-void run_pagerank(const char* filename, bool binary, bool header, bool weights) {
+void run_pagerank(const char* filename, bool binary, bool header, bool weights, bool pin, bool perf) {
 
   GraphMat::Graph<PR, edge> G;
   Degree<PR, edge> dg;
@@ -141,9 +141,11 @@ void run_pagerank(const char* filename, bool binary, bool header, bool weights) 
   gettimeofday(&start, 0);
 	
   G.setAllActive();
-  start_pin_tracing();  
+  if(pin) start_pin_tracing();  
+  else if (perf) start_perf_tracing();
   GraphMat::run_graph_program(&pr, G, GraphMat::UNTIL_CONVERGENCE, &pr_tmp);
-  stop_pin_tracing();  
+  if(pin) stop_pin_tracing();  
+  else if (perf) stop_perf_tracing();
   gettimeofday(&end, 0);
   time = (end.tv_sec-start.tv_sec)*1e3+(end.tv_usec-start.tv_usec)*1e-3;
   printf("PR Time = %.3f ms \n", time);
@@ -165,20 +167,25 @@ int main(int argc, char* argv[]) {
   MPI_Init(&argc, &argv);
 
   bool binary = false, header = true, weights = false;
+  bool pin = false, perf = false;
   
-  if ((argc != 2) && (argc != 5)) {
+  if ((argc != 2) && (argc != 6)) {
     printf("Correct format: %s A.mtx\n", argv[0]);
     return 0;
   }
   else if(argc == 6) {
-    binary = (atoi(argv[3])) ? true : false;
-    header = (atoi(argv[4])) ? true : false;
-    weights = (atoi(argv[5])) ? true : false;
+    binary = (atoi(argv[2])) ? true : false;
+    header = (atoi(argv[3])) ? true : false;
+    weights = (atoi(argv[4])) ? true : false;
+    if (!strcmp(argv[5], "perf"))
+        perf = true;
+    else if (!strcmp(argv[5], "pin"))
+        pin = true;
   }
 
   const char* input_filename = argv[1];
 
-  run_pagerank<int>(input_filename, binary, header, weights);
+  run_pagerank<int>(input_filename, binary, header, weights, pin, perf);
 
   MPI_Finalize();
 }

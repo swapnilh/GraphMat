@@ -33,6 +33,7 @@
 #include "utils.h"
 #include <climits>
 #include <ostream>
+#include <string>
 
 typedef unsigned int depth_type;
 
@@ -108,7 +109,7 @@ void reachable_or_not(BFSD2* v, int *result, void* params=nullptr) {
 }
 
 
-void run_bfs(char* filename, int v, bool binary, bool header, bool weights) {
+void run_bfs(char* filename, int v, bool binary, bool header, bool weights, bool pin, bool perf) {
   GraphMat::Graph<BFSD2> G;
   G.ReadMTX(filename, binary, header, weights); 
 
@@ -133,10 +134,11 @@ void run_bfs(char* filename, int v, bool binary, bool header, bool weights) {
   
   struct timeval start, end;
   gettimeofday(&start, 0);
-  start_pin_tracing();  
+  if(pin) start_pin_tracing();  
+  else if (perf) start_perf_tracing();
   GraphMat::run_graph_program(&b, G, GraphMat::UNTIL_CONVERGENCE, &b_tmp);
-  stop_pin_tracing();  
-  
+  if(pin) stop_pin_tracing();  
+  else if (perf) stop_perf_tracing();
   gettimeofday(&end, 0);
   printf("Time = %.3f ms \n", (end.tv_sec-start.tv_sec)*1e3+(end.tv_usec-start.tv_usec)*1e-3);
 
@@ -162,19 +164,24 @@ int main(int argc, char* argv[]) {
   MPI_Init(&argc, &argv);
 
   bool binary = false, header = true, weights = false;
-  
-  if ((argc != 3) && (argc != 6)) {
-    printf("Correct format: %s A.mtx source_vertex (1-based index) [binary header weights]\n", argv[0]);
+  bool pin = false, perf = false;
+
+  if ((argc != 3) && (argc != 7)) {
+    printf("Correct format: %s A.mtx source_vertex (1-based index) [binary header weights] [pin/perf]\n", argv[0]);
     return 0;
   }
-  else if(argc == 6) {
+  else if(argc == 7) {
     binary = (atoi(argv[3])) ? true : false;
     header = (atoi(argv[4])) ? true : false;
     weights = (atoi(argv[5])) ? true : false;
+    if (!strcmp(argv[6], "perf"))
+        perf = true;
+    else if (!strcmp(argv[6], "pin"))
+        pin = true;
   }
-
+  printf("pin:%d perf:%d argv[6]:%s\n", pin, perf, argv[6]);
   int source_vertex = atoi(argv[2]);
-  run_bfs(argv[1], source_vertex, binary, header, weights);
+  run_bfs(argv[1], source_vertex, binary, header, weights, pin, perf);
 
   MPI_Finalize();
   

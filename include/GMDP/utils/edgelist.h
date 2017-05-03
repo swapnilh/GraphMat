@@ -272,6 +272,9 @@ void load_edgelist(const char* dir, edgelist_t<T>* edgelist,
     } else {
       printf("Reading file: %s\n", fname_ss.str().c_str());
     }
+    /* Skip first line of file %matrix market */
+    fscanf(fp, "%*[^\n]\n", NULL);
+
 
     int m_, n_;
     unsigned long nnz_;
@@ -311,6 +314,7 @@ void load_edgelist(const char* dir, edgelist_t<T>* edgelist,
     }
     if(!fp) break;
 
+    fscanf(fp, "%*[^\n]\n", NULL);
     if (header) { //remove header
       int m_, n_;
       unsigned long nnz_;

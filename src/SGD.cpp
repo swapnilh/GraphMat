@@ -30,6 +30,7 @@
  * ******************************************************************************/
 #include <omp.h>
 #include "GraphMatRuntime.h"
+#include "utils.h"
 
 const int MAX_THREADS = 120;
 
@@ -160,7 +161,8 @@ void return_sqerr(V* vertexprop, double* out, void* params) {
   *out = vertexprop->sqerr;
 }
 
-void run_sgd(char* filename, bool binary, bool header, bool weights) {
+void run_sgd(char* filename, bool binary, bool header, 
+    bool weights, bool pin, bool perf) {
   const int k = 20;
   GraphMat::Graph< LatentVector<k> > G;
   G.ReadMTX(filename, binary, header, weights); 
@@ -197,13 +199,17 @@ void run_sgd(char* filename, bool binary, bool header, bool weights) {
   gettimeofday(&start, 0);
 
   G.setAllActive();
+  if(pin) start_pin_tracing();  
+  else if (perf) start_perf_tracing();
   GraphMat::run_graph_program(&sgdp, G, 10, &sgdp_tmp);
+  if(pin) stop_pin_tracing();  
+  else if (perf) stop_perf_tracing();
 
   gettimeofday(&end, 0);
   
   double time = (end.tv_sec-start.tv_sec)*1e3+(end.tv_usec-start.tv_usec)*1e-3;
   printf("Time = %.3f ms \n", time);
-
+  /*
   G.setAllActive();
   GraphMat::run_graph_program(&rmsep, G, 1, &rmsep_tmp);
 
@@ -213,31 +219,44 @@ void run_sgd(char* filename, bool binary, bool header, bool weights) {
   err = 0.0;
   G.applyReduceAllVertices(&err, return_sqerr, GraphMat::AddFn);
   printf("RMSE error = %lf per edge \n", sqrt(err/(G.nnz)));
+  */
 
+  /*
   for (int i = 1; i <= std::min(10, G.getNumberOfVertices()); i++) { 
     if (G.vertexNodeOwner(i)) {
       printf("%d : ", i) ;
       G.getVertexproperty(i).print();
       printf("\n");
     }
-  }
+  } 
+  */
 }
 
 int main(int argc, char* argv[]) {
   
   bool binary = false, header = true, weights = false;
-  if ((argc != 2) && (argc != 5)) {
+  bool pin = false, perf = false;
+
+  if ((argc != 2) && (argc < 5)) {
     printf("Correct format: %s A.mtx \n", argv[0]);
     return 0;
   }
-  else if(argc == 6) {
-    binary = (atoi(argv[3])) ? true : false;
-    header = (atoi(argv[4])) ? true : false;
-    weights = (atoi(argv[5])) ? true : false;
+  else if(argc > 5) {
+    binary = (atoi(argv[2])) ? true : false;
+    header = (atoi(argv[3])) ? true : false;
+    weights = (atoi(argv[4])) ? true : false;
   }
+  if(argc == 6) {
+    if (!strcmp(argv[5], "perf"))
+        perf = true;
+    else if (!strcmp(argv[5], "pin"))
+        pin = true;
+  }
+  printf("pin:%d perf:%d\n", pin, perf);
+  printf("binary:%d, header:%d, weights:%d\n", binary, header, weights);
+  
   MPI_Init(&argc, &argv);
-
-  run_sgd(argv[1], binary, header, weights); 
+  run_sgd(argv[1], binary, header, weights, pin, perf); 
   MPI_Finalize(); 
 }
 

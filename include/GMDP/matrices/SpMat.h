@@ -89,6 +89,9 @@ class SpMat {
     }
     if ((*ival) == -1 || (*jval) == -1) {
       printf("%d %d == -1\n", src, dst);
+      printf("idx: %d %d\n", start_idx[0], start_idx[1]);
+      printf("idy: %d %d\n", start_idy[0], start_idy[1]);
+      printf("ntiles_y:%d ntiles_x:%d\n", ntiles_y, ntiles_x);
       return -1;
     }
     return (*ival) + (*jval) * ntiles_y;
@@ -227,7 +230,13 @@ class SpMat {
       tedges2[i].dst = received_edges[i].dst;
       tedges2[i].val = received_edges[i].val;
       int ival, jval;
-      tedges2[i].tile_id = getPartition(received_edges[i].src, received_edges[i].dst, &ival, &jval);
+//      if(global_nrank == 1)
+//        tedges2[i].tile_id = 0;
+//      else
+        tedges2[i].tile_id = getPartition(received_edges[i].src, received_edges[i].dst, &ival, &jval);
+      if(tedges2[i].tile_id  == -1) {
+        printf("src:%d dst:%d val:%d\n", tedges2[i].src, tedges2[i].dst, tedges2[i].val);
+      }
       assert(tedges2[i].tile_id != -1);
     }
 
